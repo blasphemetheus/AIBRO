@@ -89,8 +89,59 @@ def depthFirstSearch(problem):
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
+    from game import Directions
+    return treeSearch(problem, "dfs")
+
+    print("Start:", problem.getStartState)
+    thing = util.stack
+    thing.pop
+    thing = util.stack()
+    thing.heappop
+
     return recursiveDepthLimitSearch(node, problem, limit)
 
+
+def treeSearch(problem, strategy):
+    """
+    returns a sol or failure
+    """
+    # so the solution (the list of directions is actually a stack) we return it
+    # as a list when we return it
+
+    # so the fringe is something else, it's just a bunch of nodes that we can
+    # reach, which one we expand first is decided by the search algorithm, so
+    # for this one, I'm expanding one of them, then always expanding one of the
+    # sucessors if they are there, then expanding etc, and if there are none
+    # then I go backwards one layer and maintain a list of already-checked nodes,
+    # checking them for equality in the list of checked before adding new ones
+
+    # it's lit
+    
+    # initialize the search tree using the initial state of problem
+    currentState = problem.getStartState()
+    print("Start State:", currentState)
+    fringe = util.Stack()
+    print(problem.getSuccessors(currentState))
+    solution = util.Stack()
+
+    while True:
+        # noCandidatesForExpansion
+        successorList = problem.getSuccessors(currentState)
+
+        if len(successorList) == 0:
+            print("should return failure")
+            return "failure"
+        if strategy == "bfs":
+            print("do bfs expansion")
+        elif strategy == "dfs":
+            print("do dfs expansion")
+
+        if problem.isGoalState(problem.getStartState()):
+            print("start state is goal state")
+            return solution
+        else:
+            newNodes = problem.getSuccessors(currentState)
+            fringe.push(newNodes)
 
 def recursiveDepthLimitSearch(node, problem, limit):
     '''
@@ -98,7 +149,7 @@ def recursiveDepthLimitSearch(node, problem, limit):
     '''
     if problem.GoalTest(node.state):
         return Solution(node)
-    elif limit = 0:
+    elif limit == 0:
         return cutoff
     else:
         cutoffOccured = False
