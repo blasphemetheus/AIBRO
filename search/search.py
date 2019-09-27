@@ -116,19 +116,25 @@ def treeSearch(problem, strategy):
     # checking them for equality in the list of checked before adding new ones
 
     # it's lit
-    
+
     # initialize the search tree using the initial state of problem
     currentState = problem.getStartState()
+    fringe = list()
+    traveled = util.Stack()
+    solution = list()
     print("Start State:", currentState)
-    fringe = util.Stack()
-    print(problem.getSuccessors(currentState))
-    solution = util.Stack()
+    print("Successors of Start State:", problem.getSuccessors(currentState))
 
+    count = 0
     while True:
-        # noCandidatesForExpansion
-        successorList = problem.getSuccessors(currentState)
+        # todo remove limit
+        if count > 5:
+            return
 
-        if len(successorList) == 0:
+        successorList = problem.getSuccessors(currentState)
+        print("first:", successorList[0])
+        # noCandidatesForExpansion
+        if len(successorList) == 0 and len(fringe) == 0:
             print("should return failure")
             return "failure"
         if strategy == "bfs":
@@ -141,7 +147,9 @@ def treeSearch(problem, strategy):
             return solution
         else:
             newNodes = problem.getSuccessors(currentState)
-            fringe.push(newNodes)
+            #fringe.pop(0)
+
+        count += 1
 
 def recursiveDepthLimitSearch(node, problem, limit):
     '''
