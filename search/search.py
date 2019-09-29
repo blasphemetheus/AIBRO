@@ -18,6 +18,9 @@ Pacman agents (in searchAgents.py).
 """
 
 import util
+from enum import Enum
+from game import Directions
+
 
 class SearchProblem:
     """
@@ -61,7 +64,6 @@ class SearchProblem:
         """
         util.raiseNotDefined()
 
-
 def tinyMazeSearch(problem):
     """
     Returns a sequence of moves that solves tinyMaze.  For any other maze, the
@@ -70,7 +72,71 @@ def tinyMazeSearch(problem):
     from game import Directions
     s = Directions.SOUTH
     w = Directions.WEST
-    return  [s, s, w, s, w, w, s, w]
+    return [s, s, w, s, w, w, s, w]
+
+#-------------------------------------------------
+# MY STUFF
+
+# todo: Go through and purge all references to path.list because I added that :>),
+#  run with it deleted from util.py
+
+def validate_direction(potentialDirection):
+    if isinstance(potentialDirection, str):
+        validDirection = set([Directions.SOUTH, \
+        Directions.NORTH, Directions.EAST,\
+        Directions.WEST])
+        if potentialDirection in validDirection:
+            return True
+        else:
+            raise ValueError(potentialDirection, "not a valid Directions")
+    else:
+        raise ValueError(potentialDirection, "not a str")
+
+def opposite_direction(dir):
+    if validate_direction(dir):
+        if dir == Directions.NORTH:
+            return Directions.SOUTH
+        elif dir == Directions.SOUTH:
+            return Directions.NORTH
+        elif dir == Directions.EAST:
+            return Directions.WEST
+        elif dir == Directions.WEST:
+            return Directions.EAST
+        else:
+            raise ValueError("Should Never Happen, problem in validate_direction")
+
+def retrieve_states(successor_list):
+    accumulating_set = set()
+    for successor in successor_list:
+        state = successor[0]
+        direction = successor[1]
+        cost = successor[2]
+        accumulating_set.add(state)
+    return accumulating_set
+
+def get_state_of_direction(problem, current_state, next_move_direction):
+    """
+    returns the state of a direction by querying the current_state's successorlist hidden in problem
+
+    :param current_state:
+    :param next_move_direction:
+    :return:
+    """
+    for successor in problem.getSuccessors(current_state):
+        state = successor[0]
+        direction = successor[1]
+        cost = successor[2]
+
+        if next_move_direction == direction:
+            return state
+
+    raise ValueError("There should be some state that corresponds to this direction :(", direction)
+
+
+def stack_to_string(some_stack):
+    if isinstance(some_stack, util.Stack):
+        return str(some_stack.list)
+
 
 def depthFirstSearch(problem):
     """
@@ -89,22 +155,6 @@ def depthFirstSearch(problem):
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
-    from game import Directions
-    return treeSearch(problem, "dfs")
-
-    print("Start:", problem.getStartState)
-    thing = util.stack
-    thing.pop
-    thing = util.stack()
-    thing.heappop
-
-    return recursiveDepthLimitSearch(node, problem, limit)
-
-
-def treeSearch(problem, strategy):
-    """
-    returns a sol or failure
-    """
     # so the solution (the list of directions is actually a stack) we return it
     # as a list when we return it
 
@@ -118,38 +168,197 @@ def treeSearch(problem, strategy):
     # it's lit
 
     # initialize the search tree using the initial state of problem
-    currentState = problem.getStartState()
-    fringe = list()
-    traveled = util.Stack()
-    solution = list()
-    print("Start State:", currentState)
-    print("Successors of Start State:", problem.getSuccessors(currentState))
+    current_state = problem.getStartState()
+    fringe = set()
+    visited = set()
+    path = util.Stack()
 
     count = 0
     while True:
-        # todo remove limit
-        if count > 5:
+
+        #TODO:::: make it so that it picks randomly from the list always when picking the next fn, so doesn't always backtrack
+        # the same way and also doesn't always pick from the list of successors in the same way, also put the
+        # stuff into functions.
+        print("loop")
+        # TODO:  remove count check
+        if count > 100000:
             return
-
-        successorList = problem.getSuccessors(currentState)
-        print("first:", successorList[0])
-        # noCandidatesForExpansion
-        if len(successorList) == 0 and len(fringe) == 0:
-            print("should return failure")
-            return "failure"
-        if strategy == "bfs":
-            print("do bfs expansion")
-        elif strategy == "dfs":
-            print("do dfs expansion")
-
-        if problem.isGoalState(problem.getStartState()):
-            print("start state is goal state")
-            return solution
         else:
-            newNodes = problem.getSuccessors(currentState)
-            #fringe.pop(0)
+            print("")
+            print("Run Number:", count + 1)
+        # ------------ delete above til the loop start ---------------
 
+        # current_state
+        print("Current State:", current_state)
+
+        # ---------------------------------------------
+        # check for goalState
+        # --------------------------------------------
+        if problem.isGoalState(current_state):
+            print("the state reached is goal state:", current_state)
+            print("the path to get there was:", path.list)
+            return path.list
+
+        #_______________________________________________
+        # NOT GOALSTATE, NOW DOING DFS EXPANSION
+        #_______________________________________________
+
+        #  Make sure visited AND fringe are populated/updated, generate possible_move_set
+        # ---------------------------
+        print(current_state, "Not Goalstate.")
+        # adjust visited
+        visited.add(current_state)
+
+        print("Visited is: ", visited)
+
+        # Calculating possible_move_set  ....
+        successor_state_set = retrieve_states(problem.getSuccessors(current_state))
+        print("Successors with Direction:", problem.getSuccessors(current_state))
+        print("Successor States:", successor_state_set)
+        possible_new_move_set = set.difference(successor_state_set, visited)
+        print("The set of untraveled states that are possible rn:", possible_new_move_set)
+
+        fringe = adjustFringe(fringe, visited, problem.getSuccessors(current_state))
+        print("Current Fringe:", fringe)
+        print("Current Path:", path.list)
+
+        #    CHECK if there are no more candidates for expansion
+        # --------------------------------------------------------
+        if len(possible_new_move_set) == 0:
+            print("There are no unvisited Successor Candidates")
+            # We check that there is still a fringe, and if there isn't we return failure'
+            if len(fringe) == 0:
+                return "Failure - Ran out of fringe - No more possible new states to move to"
+            else:
+                print("BackTrack One")
+                print("Path", path.list)
+                previous_move_direction = path.pop()
+                next_move_direction = opposite_direction(previous_move_direction)
+
+                next_move_to = None
+                for successor in problem.getSuccessors(current_state):
+                    state = successor[0]
+                    direction = successor[1]
+                    cost = successor[2]
+
+                    if next_move_direction == direction:
+                        next_move_to = state
+                        break
+                    else:
+                        continue
+
+                if next_move_to is None:
+                    raise ValueError("Despite getting to this Point, there is not move to reverse direction?")
+                # ACTUALLY DO THE MOVE (BACKTRACK)
+                print("--Backtracking", next_move_direction, "to", next_move_to)
+                current_state = moveToSuccessor(successor)
+                path.push(direction)
+        else:
+            print("there are unvisited successor candidates")
+            # MOVING TO THIS NEW STATE
+
+            # There is a candidate for new expansion on this level
+            # ----------------------------------------------------
+            #     Go Through Successors and do stuff
+
+            gonna_move_to = None
+            for successor in problem.getSuccessors(current_state):
+                state = successor[0]
+                direction = successor[1]
+                cost = successor[2]
+
+                if gonna_move_to is None:
+                    # no previous move decided on
+                    if state in visited:
+                        # state has been visited, shouldn't travel to by this method, should be a backtracking
+                        # movement, continue to next iteration of for loop
+                        continue
+                    else:
+                        # state has not been visited, can travel to, so that's where we go
+                        # set gonna_move_to and break out of for loop
+                        gonna_move_to = state
+                        break
+                else:
+                    # an iteration of the for loop has been found where gonna_move_to aint none
+                    raise ValueError("Should Never Reach because gonna_move_to should always be None at this point")
+            print("oUT of the For Loop")
+
+            if gonna_move_to is None:
+                 raise ValueError(gonna_move_to, "is null when it shouldn't be - there is a way to move to a new place")
+            else:
+                gonna_move_dir = None
+
+                for successor in problem.getSuccessors(current_state):
+                    state = successor[0]
+                    direction = successor[1]
+                    cost = successor[2]
+
+                    if gonna_move_to == state:
+                        gonna_move_dir = direction
+                        break
+                    else:
+                        continue
+
+                if gonna_move_dir is None:
+                    raise ValueError("No Direction found to go along with given state moving to")
+
+                print("--Moving", gonna_move_dir, "to", gonna_move_to)
+                current_state = moveToSuccessor(successor)
+                path.push(gonna_move_dir)
+
+
+        #todo : define a data abstraction of path that is useful
+        # actually do the move, remember to change path
+
+        # At the Main Main loop yo
+        print("Path:", path.list)
         count += 1
+
+# def checkForCurrentSuccessors(problem, current_state):
+
+def stateAlreadyVisited(successor, visited):
+    state = successor[0]
+    return state in visited
+
+
+''' ----------------------------------------------- '''
+def adjustFringe(fringe, visited, successor_list):
+    """
+    returns an adjusted fringe
+    """
+    possibleNextStates = set()
+    for possibleMove in successor_list:
+        possibleState = possibleMove[0]
+        possibleNextStates.add(possibleState)
+
+    fringe.update(possibleNextStates)
+    fringe.difference_update(visited)
+    return fringe
+
+''' ---------------------------------------------------------- '''
+
+def valid_path_to(cur_state, next_move_state, path):
+    """
+    reverses the path taken to get to the next_move_state, adding to the path along the way
+    :param cur_state:
+    :return:
+    """
+    #some magic to reverse to the next_move_state
+    #path is added to at every step to get there or something
+
+    # problem.getSuccessors(current_state)
+    # print("Previous Move", previousMove)
+    # # todo: WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO do backtrack
+    return cur_state, path
+def moveToSuccessor(successor):
+    """
+    returns the new state (meant to mutate current_state to become), also pushes a direction into path
+    """
+    state = successor[0]
+    direction = successor[1]
+    cost = successor[2]
+    validate_direction(direction)
+    return state
 
 def recursiveDepthLimitSearch(node, problem, limit):
     '''
