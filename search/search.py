@@ -21,6 +21,8 @@ import util
 from game import Directions
 import random
 
+from search.util import PriorityQueue
+
 
 class SearchProblem:
     """
@@ -136,6 +138,7 @@ def get_state_of_direction(problem, current_location, next_move_direction):
     returns the state of a direction by querying the current_location's successorlist
      hidden in problem
 
+    :param problem:
     :param current_location:
     :param next_move_direction:
     :return:
@@ -150,13 +153,6 @@ def get_state_of_direction(problem, current_location, next_move_direction):
 
     raise ValueError("There should be some state that corresponds to this direction :(",
                      direction)
-
-
-# def stack_to_string(some_stack):
-#
-#     if isinstance(some_stack, util.Stack):
-#         return str(some_stack.list)
-# TODO: Remember to take out the change to util.py (added a toString to stack)
 
 
 def this_visited(successor, visited):
@@ -282,7 +278,7 @@ def depthFirstSearch(problem):
         # quality of life prints
         print("")
         print("Current Location:", current_location)
-        print("Current Successors:", problem.getSuccessors(current_location))
+        print("Current Successors:", problem.getSuccessors(problem.getStartState()))
 
         # check for goalState
         if problem.isGoalState(current_location):
@@ -291,7 +287,7 @@ def depthFirstSearch(problem):
 
         # NOT GOALSTATE, NOW DOING Expansion (depth first search expansion of fringe)
         # check for candidates for expansion
-        if len(problem.getSuccessors(current_location)) == 0:
+        if len(problem.getSuccessors(problem.getStartState())) == 0:
             print("Failure, No Successors.")
             raise ValueError("Failure, initialized to a disconnected node that isn't "
                              "goalstate")
@@ -376,6 +372,7 @@ def expand_fringe(problem, current_location, visited, fringe):
 
 # def checkForCurrentSuccessors(problem, current_location):
 
+
 def stateAlreadyVisited(successor, visited):
     state = successor[0]
     return state in visited
@@ -439,20 +436,23 @@ def breadthFirstSearch(problem):
     Search the shallowest nodes in the search tree first.
     Uses a Fifo data structure (queue), expands fringe at a different time
     """
-    current_location = problem.getStartState()
-    fringe = util.Queue()
-    visited = util.Queue()
+
+    layer = 0  # want to iterate the layer
+    location = problem.getStartState()
+    fringe = util.Queue()  # a queue of successors (includes direction)
+    visited = set()  # a set of location (should I do a set of successors?)
 
     # Start the While Loop
-    going = True
-    while going:
-        # add this location to the visited set
-        visited.push(current_location)
+    while True:
+        # add this location to the visited
+
+        # to add with direction, would add on move
+        visited.add(location)
 
         # quality of life prints
         print("")
-        print("Current Location:", current_location)
-        print("Current Successors:", problem.getSuccessors(current_location))
+        print("Current Location:", location)
+        print("Current Successors:", problem.getSuccessors(location))
 
         # check for goalState
         if problem.isGoalState(current_location):
@@ -510,8 +510,29 @@ def breadthFirstSearch(problem):
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    current_location = problem.getStartState()
+    fringe = set()
+    visited = set()
+    path = PriorityQueue()
+
+    count = 0
+    going = True
+    while going:
+        print("hello")
+        if problem.isGoalState(current_location):
+            return path.list
+
+
+
+
+        successor_list = problem.getSuccessors(current_location)
+
+        for suc in successor_list:
+            print(f"Location to the {suc[1]} of cost {suc[2]}, located at {suc[0]}")
+        # problem.getCostOfActions()
+        count += 1
+        if count == 4:
+            going = False
 
 
 def nullHeuristic(state, problem=None):
